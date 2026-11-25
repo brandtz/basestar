@@ -1,0 +1,30 @@
+{
+  "name": "basestar",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "packageManager": "pnpm@10.28.0",
+  "scripts": {
+    "dev": "concurrently -k -n api,web -c blue,green \"pnpm dev:api\" \"vite\"",
+    "dev:api": "tsx watch scripts/dev-server.ts",
+    "build": "vue-tsc --noEmit && vite build",
+    "typecheck": "vue-tsc --noEmit",
+    "test:api": "tsx scripts/smoke-test.ts"
+  },
+  "dependencies": {
+    "@fontsource-variable/atkinson-hyperlegible-next": "^5.3.0",
+    "@netlify/blobs": "^11.1.11",
+    "jose": "^6.2.18"
+  },
+  "devDependencies": {
+    "@netlify/functions": "^6.1.2",
+    "@types/node": "^26.6.10",
+    "@vitejs/plugin-vue": "^6.0.11",
+    "concurrently": "^10.0.7",
+    "tsx": "^4.23.15",
+    "typescript": "^5.9.3",
+    "vite": "^8.3.8",
+    "vue": "^3.5.46",
+    "vue-tsc": "^3.3.14"
+  }
+}

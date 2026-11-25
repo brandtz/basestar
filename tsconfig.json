@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "strict": true,
+    "noEmit": true,
+    "jsx": "preserve",
+    "skipLibCheck": true,
+    "isolatedModules": true,
+    "allowImportingTsExtensions": false,
+    "types": ["node", "vite/client"],
+    "noUnusedLocals": true
+  },
+  "include": ["src/**/*.ts", "src/**/*.vue", "shared/**/*.ts", "server/**/*.ts", "netlify/**/*.mts", "scripts/**/*.ts", "vite.config.ts"]
+}

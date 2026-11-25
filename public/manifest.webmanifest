@@ -1,0 +1,15 @@
+{
+  "name": "Basestar: Guided Growth team",
+  "short_name": "Basestar",
+  "description": "Who's on break, at lunch, or available, plus the team schedule.",
+  "start_url": "/#now",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#EDF1EF",
+  "theme_color": "#17616A",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
