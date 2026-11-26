@@ -156,6 +156,8 @@ export interface TimesheetDay {
   workedMinutes: number;
   /** Still on the clock (today); minutes run up to now. */
   open?: boolean;
+  /** At least one entry was made by a manager on this person's behalf. */
+  adjusted?: boolean;
   flags: string[];
 }
 

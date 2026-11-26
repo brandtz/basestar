@@ -32,6 +32,23 @@ export function daysBetween(a: string, b: string): number {
   return Math.round((Date.parse(b + 'T12:00:00Z') - Date.parse(a + 'T12:00:00Z')) / 86400000);
 }
 
+/** Local wall-clock date + time in `tz` -> UTC ISO string. */
+export function zonedToIso(date: string, time: string, tz: string): string {
+  const guess = Date.parse(`${date}T${time}:00Z`);
+  const offsetAt = (ms: number) => {
+    const z = zonedNow(tz, new Date(ms));
+    return Date.parse(`${z.date}T${z.time}:00Z`) - Math.floor(ms / 60000) * 60000;
+  };
+  const first = guess - offsetAt(guess);
+  return new Date(guess - offsetAt(first)).toISOString(); // second pass handles DST edges
+}
+
+/** "13:05" -> "1:05 PM" */
+export function to12h(hhmm: string): string {
+  const [h, m] = hhmm.split(':').map(Number);
+  return `${h % 12 || 12}:${String(m).padStart(2, '0')} ${h < 12 ? 'AM' : 'PM'}`;
+}
+
 export function toMinutes(hhmm: string): number {
   const [h, m] = hhmm.split(':').map(Number);
   return h * 60 + m;

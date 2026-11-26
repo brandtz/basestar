@@ -31,7 +31,7 @@ Optional environment variable:
 | Role | Can do |
 |---|---|
 | **Owner** (`super`) | Everything, including adding managers, changing roles, and settings |
-| **Manager** | Add and edit staff, edit any day's hours, approve requests, add closures and time off for others, view and export timesheets, clock people in or out when they forget |
+| **Manager** | Add and edit staff, edit any day's hours, approve requests, add closures and time off for others, view and export timesheets, and update anyone's status (clock in or out, start or end break or lunch), either now or at an earlier time today. Those entries are marked on the timesheet |
 | **Staff** | Clock in and out, take breaks and lunch, see the team board and schedules, request time off, swaps, covers and hour changes |
 
 ## Features

@@ -37,7 +37,7 @@ function csv() {
   for (const r of sorted.value) {
     for (const d of r.days) {
       lines.push([nameOf(r.userId), usersById.value.get(r.userId)?.username ?? '', d.date, clockOf(d.firstIn), clockOf(d.lastOut),
-        hours(d.onClockMinutes), hours(d.lunchMinutes), hours(d.breakMinutes), hours(d.workedMinutes), [...d.flags, ...(d.open ? ['Still on the clock'] : [])].join('; ')]);
+        hours(d.onClockMinutes), hours(d.lunchMinutes), hours(d.breakMinutes), hours(d.workedMinutes), [...d.flags, ...(d.open ? ['Still on the clock'] : []), ...(d.adjusted ? ['Includes manager entries'] : [])].join('; ')]);
     }
   }
   const text = lines.map((l) => l.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\r\n');
@@ -79,7 +79,7 @@ function csv() {
             <thead><tr><th>Day</th><th>In</th><th>Out</th><th class="num">Lunch</th><th class="num">Worked</th></tr></thead>
             <tbody>
               <tr v-for="d in r.days" :key="d.date">
-                <td>{{ dayMed(d.date) }}<div v-for="f in d.flags" :key="f" class="pill pill-wait" style="margin-top: 3px">{{ f }}</div></td>
+                <td>{{ dayMed(d.date) }}<div v-for="f in d.flags" :key="f" class="pill pill-wait" style="margin-top: 3px">{{ f }}</div><div v-if="d.adjusted" class="pill pill-teal" style="margin-top: 3px">Manager entry</div></td>
                 <td>{{ clockOf(d.firstIn) }}</td>
                 <td>{{ d.open ? 'On the clock' : clockOf(d.lastOut) || '—' }}</td>
                 <td class="num">{{ d.lunchMinutes }}m</td>

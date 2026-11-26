@@ -3,7 +3,7 @@
 import type {
   Board, Closure, Punch, PunchType, Settings, ShiftRequest, StatusEntry, TimeOff, TimeOffType, TimesheetRow, WorkState,
 } from '../shared/types';
-import { addDays, daysBetween, isDate, isTime, localDateOf, toMinutes, zonedNow } from '../shared/time';
+import { addDays, daysBetween, isDate, isTime, localDateOf, localTimeOf, to12h, toMinutes, zonedNow, zonedToIso } from '../shared/time';
 import {
   AuthenticationError, AuthorizationError, ConflictError, HttpError, NotFoundError, RateLimitError, ValidationError,
 } from './errors';
@@ -220,7 +220,15 @@ export function createApp(kv: KV, opts: AppOptions = {}) {
     }
     const tz = c.settings.timezone;
     const d = today(c.settings);
-    const at = nowIso();
+    const now = nowIso();
+    let at = now;
+    // Managers can record something that happened earlier today ("she went to lunch at 11:30").
+    if (c.body.at !== undefined && c.body.at !== null && c.body.at !== '') {
+      requireManager(c.user);
+      if (!isTime(c.body.at)) throw new ValidationError('Pick a time.');
+      at = zonedToIso(d, c.body.at, tz);
+      if (Date.parse(at) > Date.parse(now) + 60_000) throw new ValidationError('That time hasn’t happened yet.');
+    }
     const self = target.id === c.user.id;
     let punchTypes: PunchType[] = [];
     let completedFrom: string | undefined;
@@ -232,6 +240,10 @@ export function createApp(kv: KV, opts: AppOptions = {}) {
       const stale = !!cur && cur.state !== 'out' && localDateOf(cur.since, tz) < d;
       const state: WorkState = !cur || stale ? 'out' : cur.state;
       const who = self ? 'You’re' : `${target.displayName.split(' ')[0]} is`;
+      if (cur && !stale && Date.parse(at) < Math.floor(Date.parse(cur.since) / 60000) * 60000) {
+        const last = to12h(localTimeOf(cur.since, tz));
+        throw new ConflictError(`Pick ${last} or later. That’s when ${self ? 'your' : `${target.displayName.split(' ')[0]}’s`} status last changed.`);
+      }
       let next: StatusEntry;
       switch (action) {
         case 'clock_in':

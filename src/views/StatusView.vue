@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import type { BoardPerson, StatusEntry, WorkState } from '../../shared/types';
-import { toMinutes, zonedNow } from '../../shared/time';
+import { to12h, toMinutes, zonedNow } from '../../shared/time';
 import { post } from '../api';
 import { boardState, refreshBoard } from '../board';
 import { attempt, isManager, state, toast, tz, usersById } from '../state';
@@ -74,10 +74,10 @@ const STATE_TEXT: Record<WorkState, string> = { out: 'You’re not clocked in', 
 const busy = ref(false);
 const DONE: Record<string, string> = { clock_in: 'Clocked in', clock_out: 'Clocked out', break_start: 'Break started', lunch_start: 'Lunch started', back: 'Welcome back' };
 
-async function act(action: string, userId?: string) {
+async function act(action: string, userId?: string, at?: string) {
   busy.value = true;
   const ok = await attempt(async () => {
-    const r = await post<{ status: StatusEntry }>('/status', { action, userId });
+    const r = await post<{ status: StatusEntry }>('/status', { action, userId, at });
     const p = board.value?.people.find((x) => x.userId === (userId ?? state.me?.id));
     if (p) {
       p.state = r.status.state;
@@ -89,7 +89,8 @@ async function act(action: string, userId?: string) {
   busy.value = false;
   if (ok) {
     const who = userId && userId !== state.me?.id ? `${usersById.value.get(userId)?.displayName.split(' ')[0]}: ` : '';
-    toast(who + DONE[action]);
+    toast(who + DONE[action] + (at ? ` at ${to12h(at)}` : ''));
+    earlier.value = false;
     refreshBoard();
   }
 }
@@ -106,6 +107,20 @@ const selected = ref<BoardPerson | null>(null);
 const selUser = computed(() => (selected.value ? usersById.value.get(selected.value.userId) : undefined));
 const live = computed(() => (selected.value ? people.value.find((p) => p.userId === selected.value!.userId) ?? selected.value : null));
 const STATE_LABEL: Record<WorkState, string> = { out: 'Not in', in: 'Available', break: 'On break', lunch: 'At lunch' };
+
+// Manager entries on someone's behalf, now or earlier today.
+const earlier = ref(false);
+const when = ref('');
+const nowHHMM = () => zonedNow(tz()).time;
+watch(() => selected.value?.userId, () => { earlier.value = false; when.value = nowHHMM(); });
+watch(earlier, (on) => { if (on && !when.value) when.value = nowHHMM(); });
+const mgrAct = (action: string) => act(action, live.value!.userId, earlier.value ? when.value : undefined);
+const MGR_ACTIONS: Record<WorkState, { action: string; label: string; primary?: boolean; wide?: boolean }[]> = {
+  out: [{ action: 'clock_in', label: 'Clock in', primary: true }],
+  in: [{ action: 'break_start', label: 'Start break' }, { action: 'lunch_start', label: 'Start lunch' }, { action: 'clock_out', label: 'Clock out', wide: true }],
+  break: [{ action: 'back', label: 'End break', primary: true }, { action: 'lunch_start', label: 'Switch to lunch' }, { action: 'clock_out', label: 'Clock out' }],
+  lunch: [{ action: 'back', label: 'End lunch', primary: true }, { action: 'break_start', label: 'Switch to break' }, { action: 'clock_out', label: 'Clock out' }],
+};
 </script>
 
 <template>
@@ -219,16 +234,20 @@ const STATE_LABEL: Record<WorkState, string> = { out: 'Not in', in: 'Available',
           {{ TIME_OFF_LABEL[live.timeOff.type] }}{{ live.timeOff.allDay ? ' (all day)' : `, ${time12(live.timeOff.startTime)} – ${time12(live.timeOff.endTime)}` }}{{ live.timeOff.status === 'pending' ? ', pending' : '' }}
         </div>
       </div>
-      <div v-if="isManager && live.userId !== state.me?.id" class="panel" style="display: grid; gap: 10px">
-        <div class="faint">Update for {{ selUser.displayName.split(' ')[0] }}</div>
-        <div class="btn-row">
-          <button v-if="live.state === 'out'" class="btn" :disabled="busy" @click="act('clock_in', live.userId)">Clock in</button>
-          <template v-else>
-            <button v-if="live.state !== 'in'" class="btn" :disabled="busy" @click="act('back', live.userId)">End {{ live.state }}</button>
-            <button class="btn btn-quiet" :disabled="busy" @click="act('clock_out', live.userId)">Clock out</button>
-          </template>
+      <div v-if="isManager" class="panel" style="display: grid; gap: 12px">
+        <div style="font-weight: 800">Update {{ live.userId === state.me?.id ? 'yourself' : selUser.displayName.split(' ')[0] }}</div>
+        <div class="seg" role="group" aria-label="When it happened">
+          <button type="button" :aria-pressed="!earlier" @click="earlier = false">Now</button>
+          <button type="button" :aria-pressed="earlier" @click="earlier = true">Earlier today</button>
         </div>
-        <p class="faint">For when someone forgets. The change is logged under your name.</p>
+        <label v-if="earlier" class="field">
+          <span>What time?</span>
+          <input v-model="when" class="input" type="time" :max="nowHHMM()" required />
+        </label>
+        <div class="mgr-actions">
+          <button v-for="a in MGR_ACTIONS[live.state]" :key="a.action" class="btn" :class="[a.primary ? '' : 'btn-quiet', a.primary || a.wide ? 'wide' : '']" :disabled="busy || (earlier && !when)" @click="mgrAct(a.action)">{{ a.label }}</button>
+        </div>
+        <p class="faint">For when someone forgets to tap. It’s logged under your name and marked on their timesheet.</p>
       </div>
     </Sheet>
   </div>

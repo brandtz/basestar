@@ -204,6 +204,7 @@ export function timesheetDay(date: string, punches: Punch[], nowIso?: string): T
   return {
     date, firstIn, lastOut,
     onClockMinutes: min(onClock), lunchMinutes: min(lunch), breakMinutes: min(brk),
-    workedMinutes: min(onClock - lunch), ...(open ? { open } : {}), flags: [...flags],
+    workedMinutes: min(onClock - lunch), ...(open ? { open } : {}),
+    ...(ps.some((p) => p.by !== p.userId) ? { adjusted: true } : {}), flags: [...flags],
   };
 }

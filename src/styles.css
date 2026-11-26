@@ -352,6 +352,8 @@ input[type='time'].input, input[type='date'].input { min-width: 0; }
 .ts-table th { text-align: left; color: var(--ink-3); font-weight: 700; padding: 6px 4px; }
 .ts-table td { padding: 7px 4px; border-top: 1px solid var(--fog); }
 .ts-table td.num, .ts-table th.num { text-align: right; font-variant-numeric: tabular-nums; }
+.mgr-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.mgr-actions .wide { grid-column: 1 / -1; }
 .callout { background: var(--teal-tint); color: var(--teal-press); border-radius: var(--r-md); padding: 12px 14px; font-size: 0.92rem; }
 .callout b { color: var(--ink); }
 

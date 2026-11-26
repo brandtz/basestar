@@ -110,6 +110,19 @@ const benOnBoard = board.people.find((p: any) => p.userId === benU.id);
 assert.equal(benOnBoard.state, 'out');
 assert.equal(benOnBoard.stale, true);
 await ben.ok('POST', '/api/status', { action: 'clock_in' }); // allowed: yesterday's session was stale
+now = new Date('2026-12-02T18:30:00Z'); // 10:30 AM
+await mindy.ok('POST', '/api/status', { action: 'break_start', userId: benU.id, at: '10:00' });
+assert.equal((await ana.ok('GET', '/api/board')).people.find((p: any) => p.userId === benU.id).since, '2026-12-02T18:00:00.000Z');
+await mindy.fails(409, 'POST', '/api/status', { action: 'back', userId: benU.id, at: '09:59' }); // before last change
+await mindy.fails(400, 'POST', '/api/status', { action: 'back', userId: benU.id, at: '10:45' }); // in the future
+await ben.fails(403, 'POST', '/api/status', { action: 'back', at: '10:10' }); // staff can't backdate
+await mindy.ok('POST', '/api/status', { action: 'back', userId: benU.id, at: '10:15' });
+await mindy.ok('POST', '/api/status', { action: 'lunch_start', userId: benU.id });
+await mindy.ok('POST', '/api/status', { action: 'back', userId: benU.id });
+benDay = (await mindy.ok('GET', '/api/timesheets?from=2026-12-02&to=2026-12-02')).rows.find((x: any) => x.userId === benU.id).days[0];
+assert.equal(benDay.breakMinutes, 15);
+assert.equal(benDay.adjusted, true);
+step('manager starts/ends break and lunch for someone, now or earlier today; entries are marked');
 step('manager acts on behalf; open shifts count live today; forgotten clock-outs flagged and read as out the next day');
 
 // --- Time off
